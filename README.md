@@ -1,6 +1,6 @@
 # Martok
 
-Markdown to HTML converter
+Markdown to HTML and PDF converter
 
 ## Installation
 
@@ -14,19 +14,48 @@ go install github.com/lehrcode/martok@latest
 martok -o output.html -t "Title" -e author="Christian Winkler" -e lang=de input1.md input2.md
 ```
 
-Multiple Markdown files are converted into one HTML document.
+Multiple Markdown files are converted into one document.
 
-| Flag                    | Description                                                               | Default                                      |
-|-------------------------|---------------------------------------------------------------------------|----------------------------------------------|
-| `-o`, `--output`        | filename of the HTML document                                             | name of the first Markdown file with `.html` |
-| `-t`, `--title`         | title of the HTML document                                                | first heading of the Markdown files          |
-| `-s`, `--stylesheet`    | URI of a stylesheet used instead of the embedded styles (repeatable)      | embedded styles                              |
-| `-j`, `--script-module` | URI of a JavaScript module loaded at the end of the document (repeatable) | none                                         |
-| `-e`, `--variable`      | extra template variable as `name=value` (repeatable)                      | none                                         |
-| `-m`, `--template`      | filename of a Go HTML template used instead of the embedded template      | embedded template                            |
+| Flag                    | Description                                                               | Default                                             |
+|-------------------------|---------------------------------------------------------------------------|-----------------------------------------------------|
+| `-o`, `--output`        | filename of the document                                                  | name of the first input file with `.html` or `.pdf` |
+| `-f`, `--format`        | output format, `html` or `pdf`                                            | `pdf` for an output filename with `.pdf`, else `html` |
+| `--margin`              | page margins of the PDF in inches                                         | `0.4`                                               |
+| `-t`, `--title`         | title of the document                                                     | first heading of the Markdown files                 |
+| `-s`, `--stylesheet`    | URI of a stylesheet used instead of the embedded styles (repeatable)      | embedded styles                                     |
+| `-j`, `--script-module` | URI of a JavaScript module loaded at the end of the document (repeatable) | none                                                |
+| `-e`, `--variable`      | extra template variable as `name=value` (repeatable)                      | none                                                |
+| `-m`, `--template`      | filename of a Go HTML template used instead of the embedded template      | embedded template                                   |
 
 The embedded template uses the variables `lang` (language of the document,
 `en` if not set), `author` and `icon` (URI of the favicon).
+
+### PDF
+
+The document is converted to PDF if the output filename ends with `.pdf` or
+with `--format pdf`. The PDF is printed by a headless Chrome, so Google Chrome,
+Chromium or Microsoft Edge has to be installed.
+
+```bash
+martok -o output.pdf --toc --margin 0.8 input1.md input2.md
+martok --format pdf input.md
+```
+
+A single HTML file given instead of Markdown files is printed to PDF as it is:
+
+```bash
+martok page.html
+```
+
+While printing, the document is served by a temporary web server on a free port
+that is only reachable from the local machine. It also serves the files of the
+directories of the input files, so that relative URIs of embedded files like
+images work. With input files from several directories a file is taken from the
+first directory that contains it.
+
+`--toc` also embeds the headings of the document as the outline (bookmarks) of
+the PDF. `--margin` sets all four page margins. The paper size is A4
+unless a stylesheet sets another one, for example `@page { size: letter }`.
 
 ### Heading ids
 
@@ -48,7 +77,7 @@ martok --toc --toc-title "Inhalt" --toc-min-depth 2 --toc-max-depth 3 input1.md 
 
 | Flag              | Description                                         | Default    |
 |-------------------|-----------------------------------------------------|------------|
-| `--toc`           | generate the table of contents                      | off        |
+| `--toc`           | generate the table of contents and the PDF outline  | off        |
 | `--toc-title`     | title of the table of contents (`""` for no title)  | `Contents` |
 | `--toc-min-depth` | minimum heading level included (`0` = no limit)     | `0`        |
 | `--toc-max-depth` | maximum heading level included (`0` = no limit)     | `0`        |

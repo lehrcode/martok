@@ -7,6 +7,40 @@ import (
 	"github.com/yuin/goldmark/v2/parser"
 )
 
+func TestResolveFormat(t *testing.T) {
+	tests := []struct {
+		name           string
+		format         string
+		outputFilename string
+		htmlInput      bool
+		want           string
+		wantErr        bool
+	}{
+		{name: "default is html", want: formatHTML},
+		{name: "html output filename", outputFilename: "out.html", want: formatHTML},
+		{name: "pdf output filename", outputFilename: "out.pdf", want: formatPDF},
+		{name: "pdf output filename in upper case", outputFilename: "OUT.PDF", want: formatPDF},
+		{name: "explicit pdf", format: formatPDF, want: formatPDF},
+		{name: "explicit format wins over the output filename", format: formatHTML, outputFilename: "out.pdf", want: formatHTML},
+		{name: "html input defaults to pdf", htmlInput: true, want: formatPDF},
+		{name: "html input with pdf output filename", outputFilename: "out.pdf", htmlInput: true, want: formatPDF},
+		{name: "html input with other output filename", outputFilename: "out", htmlInput: true, want: formatPDF},
+		{name: "html input with html output filename", outputFilename: "out.html", htmlInput: true, wantErr: true},
+		{name: "html input with explicit html", format: formatHTML, htmlInput: true, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := resolveFormat(tt.format, tt.outputFilename, tt.htmlInput)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("resolveFormat() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("resolveFormat() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFirstHeadingText(t *testing.T) {
 	tests := []struct {
 		name    string
