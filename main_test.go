@@ -1,6 +1,8 @@
 package main
 
 import (
+	"html/template"
+	"strings"
 	"testing"
 
 	"github.com/yuin/goldmark/v2/ast"
@@ -38,6 +40,30 @@ func TestResolveFormat(t *testing.T) {
 				t.Errorf("resolveFormat() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestRenderPageFooter(t *testing.T) {
+	t.Cleanup(func() { outputTemplate = nil })
+
+	// The embedded template defines the footer, but it is not part of the
+	// HTML document.
+	outputTemplate = template.Must(template.New("template.gohtml").Parse(outputTemplateSource))
+	if footer := renderPageFooter(); !strings.Contains(footer, `class="pageNumber"`) {
+		t.Errorf("renderPageFooter() = %q, want the page number", footer)
+	}
+	var html strings.Builder
+	if err := outputTemplate.Execute(&html, Document{}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(html.String(), "pageNumber") {
+		t.Error("the HTML document contains the page footer")
+	}
+
+	// A template without the footer template has no footer.
+	outputTemplate = template.Must(template.New("custom.gohtml").Parse("{{ .Body }}"))
+	if footer := renderPageFooter(); footer != "" {
+		t.Errorf("renderPageFooter() = %q, want no footer", footer)
 	}
 }
 

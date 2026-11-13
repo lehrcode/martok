@@ -57,6 +57,23 @@ first directory that contains it.
 the PDF. `--margin` sets all four page margins. The paper size is A4
 unless a stylesheet sets another one, for example `@page { size: letter }`.
 
+The footer of the pages is the template `page-footer` of the HTML template. The
+embedded template prints the page number and the number of pages. A template
+given with `--template` gets a footer by defining it, without it the PDF has no
+footer:
+
+```gotemplate
+{{ define "page-footer" -}}
+    <div style="width: 100%; font-size: 8pt; text-align: center"><span class="pageNumber"></span></div>
+{{- end }}
+```
+
+Chrome renders the footer separately from the document: the stylesheets of the
+document do not apply to it, so it needs its own styles including a font size.
+Elements with the classes `pageNumber`, `totalPages`, `title`, `date` and `url`
+are filled in by Chrome. The footer is printed in the bottom margin and is cut
+off if `--margin` is too small.
+
 ### Heading ids
 
 Headings get GitHub-style ids that are restricted to ASCII characters: the text

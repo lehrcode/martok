@@ -83,6 +83,17 @@ func main() {
 		outputFilename = strings.TrimSuffix(filepath.Base(inputFiles[0]), filepath.Ext(inputFiles[0])) + "." + format
 	}
 
+	if outputTemplateFilename != "" {
+		log.Printf("Output template filename: %s\n", outputTemplateFilename)
+		if t, err := template.ParseFiles(outputTemplateFilename); err != nil {
+			log.Fatal(err)
+		} else {
+			outputTemplate = t
+		}
+	} else {
+		outputTemplate = template.Must(template.New("template.gohtml").Parse(outputTemplateSource))
+	}
+
 	var (
 		output  []byte
 		options = pdfOptions{Margin: pdfMargin, Outline: generateTOC}
@@ -91,9 +102,14 @@ func main() {
 	case format == formatHTML:
 		output = renderHTML()
 	case htmlInput:
+		options.Footer = renderPageFooter()
 		output, err = printToPDF(filesHandler(inputDirs()), "/"+url.PathEscape(filepath.Base(inputFiles[0])), options)
 	default:
-		output, err = printToPDF(documentHandler(renderHTML(), filesHandler(inputDirs())), "/", options)
+		// The footer is rendered after the document, because rendering the
+		// document sets the default document title.
+		html := renderHTML()
+		options.Footer = renderPageFooter()
+		output, err = printToPDF(documentHandler(html, filesHandler(inputDirs())), "/", options)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -102,6 +118,20 @@ func main() {
 	if err := os.WriteFile(outputFilename, output, 0644); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// renderPageFooter returns the footer template for the pages of a PDF. It is
+// the template "page-footer" of the output template. If the output template
+// does not define it, there is no footer and the result is an empty string.
+func renderPageFooter() string {
+	if outputTemplate.Lookup("page-footer") == nil {
+		return ""
+	}
+	var footer strings.Builder
+	if err := outputTemplate.ExecuteTemplate(&footer, "page-footer", document); err != nil {
+		log.Fatal(err)
+	}
+	return footer.String()
 }
 
 // isHTMLFilename reports whether the filename has the extension of an HTML file.
@@ -148,17 +178,6 @@ func inputDirs() []string {
 
 // renderHTML converts the Markdown input files into one HTML document.
 func renderHTML() []byte {
-	if outputTemplateFilename != "" {
-		log.Printf("Output template filename: %s\n", outputTemplateFilename)
-		if t, err := template.ParseFiles(outputTemplateFilename); err != nil {
-			log.Fatal(err)
-		} else {
-			outputTemplate = t
-		}
-	} else {
-		outputTemplate = template.Must(template.New("template.gohtml").Parse(outputTemplateSource))
-	}
-
 	var parserExtensions = []parser.Extension{
 		extension.NewGFMParser(),
 		slugger.NewParser(),
