@@ -9,14 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
+	chromahtml "github.com/alecthomas/chroma/v3/formatters/html"
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/yuin/goldmark"
-	highlighting "github.com/yuin/goldmark-highlighting/v2"
-	"github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
-	"go.abhg.dev/goldmark/toc"
+	"github.com/yuin/goldmark-diagram"
+	"github.com/yuin/goldmark-highlighting/v3"
+	"github.com/yuin/goldmark/v2/extension"
+	"github.com/yuin/goldmark/v2/parser"
+	"github.com/yuin/goldmark/v2/renderer/html"
 )
 
 type Document struct {
@@ -67,42 +66,41 @@ func main() {
 		outputTemplate = template.Must(template.New("template.gohtml").Parse(outputTemplateSource))
 	}
 
-	var extensions = []goldmark.Extender{
-		extension.GFM,
-		highlighting.NewHighlighting(
-			highlighting.WithFormatOptions(
-				chromahtml.WithClasses(true),
-			),
+	var parserExtensions = []parser.Extension{
+		extension.NewGFMParser(),
+	}
+
+	var rendererExtensions = []html.Extension{
+		extension.NewGFMHTMLRenderer(),
+		diagram.NewHTMLRenderer(),
+		highlighting.NewHTMLRenderer(
+			highlighting.WithFormatterOptions(chromahtml.WithClasses(true)),
+			highlighting.WithExcludeLanguages("mermaid", "plantuml"),
 		),
 	}
 
-	if generateTOC {
-		extensions = append(extensions, &toc.Extender{
-			Title:    titleOfTOC,
-			TitleID:  "toc-title",
-			ListID:   "toc-list",
-			Compact:  true,
-			MinDepth: minDepthOfTOC,
-			MaxDepth: maxDepthOfTOC,
-		})
-	}
+	/*
+		if generateTOC {
+			extensions = append(extensions, &toc.Extender{
+				Title:    titleOfTOC,
+				TitleID:  "toc-title",
+				ListID:   "toc-list",
+				Compact:  true,
+				MinDepth: minDepthOfTOC,
+				MaxDepth: maxDepthOfTOC,
+			})
+		}
+	*/
 
-	var md = goldmark.New(
-		goldmark.WithExtensions(
-			extensions...,
-		),
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
-		),
-		goldmark.WithRendererOptions(
-			html.WithUnsafe(),
-		),
+	var (
+		mdParser       = parser.New(parser.WithExtensions(parserExtensions...), parser.WithAutoHeadingID())
+		mdHtmlRenderer = html.New(html.WithExtensions(rendererExtensions...), html.WithUnsafe())
 	)
 
-	var convertedHtml bytes.Buffer
+	var convertedHtml strings.Builder
 	for _, inputFilename := range inputFiles {
 		if inputBytes, err := os.ReadFile(inputFilename); err == nil {
-			if err := md.Convert(inputBytes, &convertedHtml); err != nil {
+			if err := mdHtmlRenderer.Render(&convertedHtml, inputBytes, mdParser.Parse(inputBytes)); err != nil {
 				log.Fatal(err)
 			}
 		}
