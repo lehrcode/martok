@@ -11,8 +11,11 @@ import (
 
 	chromahtml "github.com/alecthomas/chroma/v3/formatters/html"
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/lehrcode/mdtohtml/slugger"
+	"github.com/lehrcode/mdtohtml/toc"
 	"github.com/yuin/goldmark-diagram"
 	"github.com/yuin/goldmark-highlighting/v3"
+	"github.com/yuin/goldmark/v2/ast"
 	"github.com/yuin/goldmark/v2/extension"
 	"github.com/yuin/goldmark/v2/parser"
 	"github.com/yuin/goldmark/v2/renderer/html"
@@ -68,6 +71,7 @@ func main() {
 
 	var parserExtensions = []parser.Extension{
 		extension.NewGFMParser(),
+		slugger.NewParser(),
 	}
 
 	var rendererExtensions = []html.Extension{
@@ -79,30 +83,44 @@ func main() {
 		),
 	}
 
-	/*
-		if generateTOC {
-			extensions = append(extensions, &toc.Extender{
-				Title:    titleOfTOC,
-				TitleID:  "toc-title",
-				ListID:   "toc-list",
-				Compact:  true,
-				MinDepth: minDepthOfTOC,
-				MaxDepth: maxDepthOfTOC,
-			})
-		}
-	*/
+	if generateTOC {
+		parserExtensions = append(parserExtensions, toc.NewParser(
+			toc.WithTitle(titleOfTOC),
+			toc.WithMinDepth(minDepthOfTOC),
+			toc.WithMaxDepth(maxDepthOfTOC),
+		))
+		rendererExtensions = append(rendererExtensions, toc.NewHTMLRenderer())
+	}
 
 	var (
-		mdParser       = parser.New(parser.WithExtensions(parserExtensions...), parser.WithAutoHeadingID())
-		mdHtmlRenderer = html.New(html.WithExtensions(rendererExtensions...), html.WithUnsafe())
+		mdParser = parser.New(parser.WithExtensions(parserExtensions...), parser.WithAutoHeadingID())
+		// All input files are parsed with the same context: it makes the heading
+		// ids unique across the files and lets the table-of-contents collect the
+		// headings of all of them.
+		mdParserContext = parser.WithContext(parser.NewContext())
+		mdHtmlRenderer  = html.New(html.WithExtensions(rendererExtensions...), html.WithUnsafe())
 	)
 
-	var convertedHtml strings.Builder
+	// All input files have to be parsed before the first one is rendered,
+	// because the table-of-contents at the beginning of the first document
+	// also lists the headings of the following ones.
+	var (
+		sources   = make([][]byte, 0, len(inputFiles))
+		documents = make([]ast.Node, 0, len(inputFiles))
+	)
 	for _, inputFilename := range inputFiles {
-		if inputBytes, err := os.ReadFile(inputFilename); err == nil {
-			if err := mdHtmlRenderer.Render(&convertedHtml, inputBytes, mdParser.Parse(inputBytes)); err != nil {
-				log.Fatal(err)
-			}
+		inputBytes, err := os.ReadFile(inputFilename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		sources = append(sources, inputBytes)
+		documents = append(documents, mdParser.Parse(inputBytes, mdParserContext))
+	}
+
+	var convertedHtml strings.Builder
+	for i, doc := range documents {
+		if err := mdHtmlRenderer.Render(&convertedHtml, sources[i], doc); err != nil {
+			log.Fatal(err)
 		}
 	}
 
