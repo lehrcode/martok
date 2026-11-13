@@ -101,7 +101,7 @@ func (t *astTransformer) Transform(doc *gast.Document, reader text.Reader, pc pa
 			return gast.WalkSkipChildren, nil
 		case *gast.Heading:
 			if t.includes(n.Level) {
-				if title := headingTitle(n, source); title != "" {
+				if title := PlainText(n, source); title != "" {
 					toc.AddItem(NewItem(n.Level, headingID(n, title, source, pc), title))
 				}
 			}
@@ -133,11 +133,11 @@ func headingID(heading *gast.Heading, title string, source []byte, pc parser.Con
 	return id
 }
 
-// headingTitle returns the plain text of the given heading without any inline
-// markup.
-func headingTitle(heading *gast.Heading, source []byte) string {
+// PlainText returns the text of the given node, for example a heading, without
+// any inline markup.
+func PlainText(node gast.Node, source []byte) string {
 	var sb strings.Builder
-	writePlainText(&sb, heading, source)
+	writePlainText(&sb, node, source)
 	return strings.TrimSpace(sb.String())
 }
 
