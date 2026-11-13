@@ -48,7 +48,7 @@ func TestRenderPageFooter(t *testing.T) {
 
 	// The embedded template defines the footer, but it is not part of the
 	// HTML document.
-	outputTemplate = template.Must(template.New("template.gohtml").Parse(outputTemplateSource))
+	outputTemplate = template.Must(template.New("template.gohtml").Funcs(tplFuncs).Parse(outputTemplateSource))
 	if footer := renderPageFooter(); !strings.Contains(footer, `class="pageNumber"`) {
 		t.Errorf("renderPageFooter() = %q, want the page number", footer)
 	}
@@ -61,7 +61,7 @@ func TestRenderPageFooter(t *testing.T) {
 	}
 
 	// A template without the footer template has no footer.
-	outputTemplate = template.Must(template.New("custom.gohtml").Parse("{{ .Body }}"))
+	outputTemplate = template.Must(template.New("custom.gohtml").Funcs(tplFuncs).Parse("{{ .Body }}"))
 	if footer := renderPageFooter(); footer != "" {
 		t.Errorf("renderPageFooter() = %q, want no footer", footer)
 	}

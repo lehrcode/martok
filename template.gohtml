@@ -11,7 +11,7 @@
     <title>{{ . }}</title>
 {{- end }}
 {{- range .Stylesheets }}
-    <link rel="stylesheet" href="{{ . }}">
+    <link rel="stylesheet" href="{{ . | replace "\\" "/" }}">
 {{- else }}
     <style>
         /* PreWrapper */ .chroma { background-color: #ffffff; }
@@ -85,8 +85,7 @@
                 break-inside: avoid;
                 page-break-inside: avoid;
             }
-            table, tr, td, th, pre { break-inside: avoid; page-break-inside: avoid }
-            /*p + table, p + pre { break-before: avoid; page-break-before: avoid }*/
+            table, tr, td, th, pre, ul, ol { break-inside: avoid; page-break-inside: avoid }
             thead { display: table-header-group }
             tfoot { display: table-footer-group }
             .toc { break-after: always; page-break-after: always }
@@ -94,7 +93,7 @@
     </style>
 {{ end -}}
 {{- if .Variables.icon }}
-    <link rel="icon" type="image/x-icon" href="{{ .Variables.icon }}">
+    <link rel="icon" type="image/x-icon" href="{{ .Variables.icon | replace "\\" "/" }}">
 {{ end -}}
 </head>
 <body>
@@ -102,10 +101,10 @@
 {{ .Body }}
 
 {{- range .ScriptModules }}
-    <script type="module" src="{{ . }}"></script>
+    <script type="module" src="{{ . | replace "\\" "/" }}"></script>
 {{- end }}
 </body>
 </html>
 {{ define "page-footer" -}}
-    <div style="width: 100%; font-family: Verdana, Geneva, Tahoma, sans-serif; font-size: 8pt; text-align: center"><span class="pageNumber"></span>/<span class="totalPages"></span></div>
+    <div style="width: 100%; font-family: sans-serif; font-size: 8pt; text-align: center"><span class="pageNumber"></span>/<span class="totalPages"></span></div>
 {{- end -}}

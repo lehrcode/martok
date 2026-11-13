@@ -52,6 +52,11 @@ var (
 	titleOfTOC             string
 	minDepthOfTOC          int
 	maxDepthOfTOC          int
+	tplFuncs               = template.FuncMap{
+		"replace": func(old, new, s string) string {
+			return strings.Replace(s, old, new, -1)
+		},
+	}
 )
 
 func main() {
@@ -85,13 +90,14 @@ func main() {
 
 	if outputTemplateFilename != "" {
 		log.Printf("Output template filename: %s\n", outputTemplateFilename)
-		if t, err := template.ParseFiles(outputTemplateFilename); err != nil {
+		if t, err := template.New(filepath.Base(outputTemplateFilename)).Funcs(tplFuncs).
+			ParseFiles(outputTemplateFilename); err != nil {
 			log.Fatal(err)
 		} else {
 			outputTemplate = t
 		}
 	} else {
-		outputTemplate = template.Must(template.New("template.gohtml").Parse(outputTemplateSource))
+		outputTemplate = template.Must(template.New("template.gohtml").Funcs(tplFuncs).Parse(outputTemplateSource))
 	}
 
 	var (
