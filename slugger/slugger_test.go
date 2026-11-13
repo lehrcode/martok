@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lehrcode/mdtohtml/slugger"
+	"github.com/lehrcode/martok/slugger"
 	"github.com/yuin/goldmark/v2/ast"
 	"github.com/yuin/goldmark/v2/parser"
 	"github.com/yuin/goldmark/v2/renderer/html"

@@ -1,4 +1,4 @@
-module github.com/lehrcode/mdtohtml
+module github.com/lehrcode/martok
 
 go 1.27
 

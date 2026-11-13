@@ -11,8 +11,8 @@ import (
 
 	chromahtml "github.com/alecthomas/chroma/v3/formatters/html"
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/lehrcode/mdtohtml/slugger"
-	"github.com/lehrcode/mdtohtml/toc"
+	"github.com/lehrcode/martok/slugger"
+	"github.com/lehrcode/martok/toc"
 	"github.com/yuin/goldmark-diagram"
 	"github.com/yuin/goldmark-highlighting/v3"
 	"github.com/yuin/goldmark/v2/ast"

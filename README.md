@@ -1,17 +1,17 @@
-# mdtohtml
+# Martok
 
 Markdown to HTML converter
 
 ## Installation
 
 ```bash
-go install github.com/lehrcode/mdtohtml@latest
+go install github.com/lehrcode/martok@latest
 ```
 
 ## Usage
 
 ```bash
-mdtohtml -o output.html -t "Title" -e author="Christian Winkler" -e lang=de input1.md input2.md
+martok -o output.html -t "Title" -e author="Christian Winkler" -e lang=de input1.md input2.md
 ```
 
 Multiple Markdown files are converted into one HTML document.
@@ -43,7 +43,7 @@ the HTML document. With multiple Markdown files it covers the headings of all
 files.
 
 ```bash
-mdtohtml --toc --toc-title "Inhalt" --toc-min-depth 2 --toc-max-depth 3 input1.md input2.md
+martok --toc --toc-title "Inhalt" --toc-min-depth 2 --toc-max-depth 3 input1.md input2.md
 ```
 
 | Flag              | Description                                         | Default    |

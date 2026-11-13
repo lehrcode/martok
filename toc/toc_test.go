@@ -4,13 +4,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lehrcode/mdtohtml/toc"
+	"github.com/lehrcode/martok/toc"
 	"github.com/yuin/goldmark/v2/parser"
 	"github.com/yuin/goldmark/v2/renderer/html"
 )
 
 // convert parses all sources with a shared context and renders them into one
-// HTML document, like mdtohtml does.
+// HTML document, like martok does.
 func convert(t *testing.T, parserOptions []parser.Option, tocOptions []toc.ParserOption, sources ...string) string {
 	t.Helper()
 	parserOptions = append(parserOptions, parser.WithExtensions(toc.NewParser(tocOptions...)))
