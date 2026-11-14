@@ -42,6 +42,7 @@ var (
 	outputFilename string
 	outputFormat   string
 	pdfMargin      float64
+	pdfOutline     bool
 	document       = Document{Variables: make(map[string]string)}
 
 	//go:embed template.gohtml
@@ -65,13 +66,14 @@ func main() {
 	kingpin.Flag("script-module", "JavaScript module URI").Short('j').StringsVar(&document.ScriptModules)
 	kingpin.Flag("output", "output filename").Short('o').StringVar(&outputFilename)
 	kingpin.Flag("format", "output format (default: pdf if the output filename ends with .pdf, otherwise html)").Short('f').EnumVar(&outputFormat, formatHTML, formatPDF)
-	kingpin.Flag("margin", "page margins of the PDF in inches").Default("0.4").Float64Var(&pdfMargin)
+	kingpin.Flag("pdf-margin", "page margins of the PDF in inches").Default("0.4").Float64Var(&pdfMargin)
 	kingpin.Flag("title", "document title (default: first heading)").Short('t').StringVar(&document.Title)
 	kingpin.Flag("template", "HTML template filename").Short('m').StringVar(&outputTemplateFilename)
 	kingpin.Flag("toc", "generate table-of-contents (and the outline of a PDF)").BoolVar(&generateTOC)
 	kingpin.Flag("toc-title", "table-of-contents title").Default("Contents").StringVar(&titleOfTOC)
 	kingpin.Flag("toc-min-depth", "minimum headline depth included in table-of-contents").IntVar(&minDepthOfTOC)
 	kingpin.Flag("toc-max-depth", "maximum headline depth included in table-of-contents").IntVar(&maxDepthOfTOC)
+	kingpin.Flag("pdf-outline", "generate PDF with outline").BoolVar(&pdfOutline)
 	kingpin.Arg("input", "Markdown filenames or a single HTML filename to convert to PDF").Required().ExistingFilesVar(&inputFiles)
 	kingpin.Parse()
 
@@ -102,7 +104,7 @@ func main() {
 
 	var (
 		output  []byte
-		options = pdfOptions{Margin: pdfMargin, Outline: generateTOC}
+		options = pdfOptions{Margin: pdfMargin, Outline: pdfOutline}
 	)
 	switch {
 	case format == formatHTML:
@@ -113,9 +115,9 @@ func main() {
 	default:
 		// The footer is rendered after the document, because rendering the
 		// document sets the default document title.
-		html := renderHTML()
+		renderedHTML := renderHTML()
 		options.Footer = renderPageFooter()
-		output, err = printToPDF(documentHandler(html, filesHandler(inputDirs())), "/", options)
+		output, err = printToPDF(documentHandler(renderedHTML, filesHandler(inputDirs())), "/", options)
 	}
 	if err != nil {
 		log.Fatal(err)
