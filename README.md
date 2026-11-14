@@ -24,6 +24,7 @@ Multiple Markdown files are converted into one document.
 | `--pdf-outline`         | generate PDF with outline                                                 | off                                                   |
 | `-t`, `--title`         | title of the document                                                     | first heading of the Markdown files                   |
 | `-a`, `--author`        | author of the document                                                    | full names or usernames of the input files' owners    |
+| `--ai-generated`        | mark the document as AI generated                                         | off                                                   |
 | `-s`, `--stylesheet`    | URI of a stylesheet used instead of the embedded styles (repeatable)      | embedded styles                                       |
 | `-j`, `--script-module` | URI of a JavaScript module loaded at the end of the document (repeatable) | none                                                  |
 | `-e`, `--variable`      | extra template variable as `name=value` (repeatable)                      | none                                                  |
@@ -32,8 +33,10 @@ Multiple Markdown files are converted into one document.
 The embedded template uses the variables `lang` (language of the document,
 `en` if not set) and `icon` (URI of the favicon).
 
-A template also gets the author as `.Author` and the most recent modification
-time of the input files as `.LastModified`.
+A template also gets the author as `.Author`, the most recent modification
+time of the input files as `.LastModified`, the page margins of the PDF in
+inches as `.PDFMargin` and `--ai-generated` as `.AIGenerated`. The function
+`aiGeneratedImage` returns an "AI generated" image as a data URI.
 
 ### PDF
 
@@ -66,7 +69,8 @@ The header and the footer of the pages are the templates `page-header` and
 `page-footer` of the HTML template. The embedded template has an empty header
 and a footer with the author on the left, the page number and the number of
 pages in the middle and the date of the last modification of the input files on
-the right. A template given with `--template` gets a header or footer by
+the right. With `--ai-generated` an "AI generated" image is printed in front of
+the author. A template given with `--template` gets a header or footer by
 defining it, without it the PDF has none:
 
 ```gotemplate
@@ -79,9 +83,10 @@ defining it, without it the PDF has none:
 
 Chrome renders the header and the footer separately from the document: the
 stylesheets of the document do not apply to them, so they need their own styles
-including a font size. Elements with the classes `pageNumber`, `totalPages`,
-`title`, `date` and `url` are filled in by Chrome. They are printed in the top
-and bottom margin and are cut off if `--pdf-margin` is too small.
+including a font size, and images have to be data URIs. Elements with the
+classes `pageNumber`, `totalPages`, `title`, `date` and `url` are filled in by
+Chrome. They are printed in the top and bottom margin over the full width of
+the page and are cut off if `--pdf-margin` is too small.
 
 ### Heading ids
 

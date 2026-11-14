@@ -52,6 +52,7 @@ func TestRenderPageTemplate(t *testing.T) {
 	document = Document{
 		Author:       "Erika Mustermann",
 		LastModified: time.Date(2026, time.March, 7, 23, 59, 0, 0, time.Local),
+		PDFMargin:    0.8,
 	}
 
 	// The embedded template defines the header and the footer, but they are
@@ -61,10 +62,21 @@ func TestRenderPageTemplate(t *testing.T) {
 		t.Errorf(`renderPageTemplate("page-header") = %q, want an empty span`, header)
 	}
 	footer := renderPageTemplate("page-footer")
-	for _, want := range []string{"Erika Mustermann", `class="pageNumber"`, `class="totalPages"`, "2026-03-07"} {
+	for _, want := range []string{"Erika Mustermann", `class="pageNumber"`, `class="totalPages"`, "2026-03-07", "padding: 0 0.8in"} {
 		if !strings.Contains(footer, want) {
 			t.Errorf(`renderPageTemplate("page-footer") = %q, want it to contain %q`, footer, want)
 		}
+	}
+	if strings.Contains(footer, "<img") {
+		t.Errorf(`renderPageTemplate("page-footer") = %q, want no image`, footer)
+	}
+
+	// An AI generated document has the image in front of the author.
+	document.AIGenerated = true
+	footer = renderPageTemplate("page-footer")
+	image, author := strings.Index(footer, `<img src="data:image/svg`), strings.Index(footer, "Erika Mustermann")
+	if image < 0 || image > author {
+		t.Errorf("the page footer has the image at %d and the author at %d, want the image in front of the author", image, author)
 	}
 	var html strings.Builder
 	if err := outputTemplate.Execute(&html, document); err != nil {
