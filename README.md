@@ -11,7 +11,7 @@ go install github.com/lehrcode/martok@latest
 ## Usage
 
 ```bash
-martok -o output.html -t "Title" -e author="Christian Winkler" -e lang=de input1.md input2.md
+martok -o output.html -t "Title" -a "Christian Winkler" -e lang=de input1.md input2.md
 ```
 
 Multiple Markdown files are converted into one document.
@@ -23,13 +23,17 @@ Multiple Markdown files are converted into one document.
 | `--pdf-margin`          | page margins of the PDF in inches                                         | `0.4`                                                 |
 | `--pdf-outline`         | generate PDF with outline                                                 | off                                                   |
 | `-t`, `--title`         | title of the document                                                     | first heading of the Markdown files                   |
+| `-a`, `--author`        | author of the document                                                    | full names or usernames of the input files' owners    |
 | `-s`, `--stylesheet`    | URI of a stylesheet used instead of the embedded styles (repeatable)      | embedded styles                                       |
 | `-j`, `--script-module` | URI of a JavaScript module loaded at the end of the document (repeatable) | none                                                  |
 | `-e`, `--variable`      | extra template variable as `name=value` (repeatable)                      | none                                                  |
 | `-m`, `--template`      | filename of a Go HTML template used instead of the embedded template      | embedded template                                     |
 
 The embedded template uses the variables `lang` (language of the document,
-`en` if not set), `author` and `icon` (URI of the favicon).
+`en` if not set) and `icon` (URI of the favicon).
+
+A template also gets the author as `.Author` and the most recent modification
+time of the input files as `.LastModified`.
 
 ### PDF
 
@@ -54,26 +58,30 @@ directories of the input files, so that relative URIs of embedded files like
 images work. With input files from several directories a file is taken from the
 first directory that contains it.
 
-`--toc` also embeds the headings of the document as the outline (bookmarks) of
-the PDF. `--margin` sets all four page margins. The paper size is A4
+`--pdf-outline` embeds the headings of the document as the outline (bookmarks)
+of the PDF. `--pdf-margin` sets all four page margins. The paper size is A4
 unless a stylesheet sets another one, for example `@page { size: letter }`.
 
-The footer of the pages is the template `page-footer` of the HTML template. The
-embedded template prints the page number and the number of pages. A template
-given with `--template` gets a footer by defining it, without it the PDF has no
-footer:
+The header and the footer of the pages are the templates `page-header` and
+`page-footer` of the HTML template. The embedded template has an empty header
+and a footer with the author on the left, the page number and the number of
+pages in the middle and the date of the last modification of the input files on
+the right. A template given with `--template` gets a header or footer by
+defining it, without it the PDF has none:
 
 ```gotemplate
 {{ define "page-footer" -}}
-    <div style="width: 100%; font-size: 8pt; text-align: center"><span class="pageNumber"></span></div>
+    <div style="width: 100%; font-size: 8pt; text-align: center">
+        {{ .Author }} – <span class="pageNumber"></span> – {{ .LastModified.Format "2006-01-02" }}
+    </div>
 {{- end }}
 ```
 
-Chrome renders the footer separately from the document: the stylesheets of the
-document do not apply to it, so it needs its own styles including a font size.
-Elements with the classes `pageNumber`, `totalPages`, `title`, `date` and `url`
-are filled in by Chrome. The footer is printed in the bottom margin and is cut
-off if `--margin` is too small.
+Chrome renders the header and the footer separately from the document: the
+stylesheets of the document do not apply to them, so they need their own styles
+including a font size. Elements with the classes `pageNumber`, `totalPages`,
+`title`, `date` and `url` are filled in by Chrome. They are printed in the top
+and bottom margin and are cut off if `--pdf-margin` is too small.
 
 ### Heading ids
 

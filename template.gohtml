@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="robots" content="nofollow,noarchive">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-{{- if .Variables.author }}
-    <meta name="author" content="{{ .Variables.author }}">
+{{- with .Author }}
+    <meta name="author" content="{{ . }}">
 {{- end }}
 {{- with .Title }}
     <title>{{ . }}</title>
@@ -105,6 +105,13 @@
 {{- end }}
 </body>
 </html>
+{{ define "page-header" -}}
+    <span></span>
+{{- end -}}
 {{ define "page-footer" -}}
-    <div style="width: 100%; font-family: sans-serif; font-size: 8pt; text-align: center"><span class="pageNumber"></span>/<span class="totalPages"></span></div>
+    <div style="box-sizing: border-box; width: 100%; padding: 0 0.4in; display: flex; column-gap: 1em; font-family: sans-serif; font-size: 8pt">
+        <span style="flex: 1">{{ .Author }}</span>
+        <span><span class="pageNumber"></span>/<span class="totalPages"></span></span>
+        <span style="flex: 1; text-align: right">{{ .LastModified.Format "2006-01-02" }}</span>
+    </div>
 {{- end -}}

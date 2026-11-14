@@ -10,6 +10,7 @@ require (
 	github.com/yuin/goldmark-diagram v1.1.1
 	github.com/yuin/goldmark-highlighting/v3 v3.1.1
 	github.com/yuin/goldmark/v2 v2.1.16
+	golang.org/x/sys v0.50.0
 )
 
 require (

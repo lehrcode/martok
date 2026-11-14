@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	chromahtml "github.com/alecthomas/chroma/v3/formatters/html"
 	"github.com/alecthomas/kingpin/v2"
@@ -30,6 +31,8 @@ type Document struct {
 	Stylesheets   []string
 	ScriptModules []string
 	Body          template.HTML
+	LastModified  time.Time
+	Author        string
 }
 
 const (
@@ -68,6 +71,7 @@ func main() {
 	kingpin.Flag("format", "output format (default: pdf if the output filename ends with .pdf, otherwise html)").Short('f').EnumVar(&outputFormat, formatHTML, formatPDF)
 	kingpin.Flag("pdf-margin", "page margins of the PDF in inches").Default("0.4").Float64Var(&pdfMargin)
 	kingpin.Flag("title", "document title (default: first heading)").Short('t').StringVar(&document.Title)
+	kingpin.Flag("author", "document author (default: owner of the input files)").Short('a').StringVar(&document.Author)
 	kingpin.Flag("template", "HTML template filename").Short('m').StringVar(&outputTemplateFilename)
 	kingpin.Flag("toc", "generate table-of-contents (and the outline of a PDF)").BoolVar(&generateTOC)
 	kingpin.Flag("toc-title", "table-of-contents title").Default("Contents").StringVar(&titleOfTOC)
@@ -90,6 +94,13 @@ func main() {
 		outputFilename = strings.TrimSuffix(filepath.Base(inputFiles[0]), filepath.Ext(inputFiles[0])) + "." + format
 	}
 
+	if document.Author == "" {
+		document.Author = fileOwners(inputFiles)
+	}
+	if document.LastModified, err = lastModified(inputFiles); err != nil {
+		log.Fatal(err)
+	}
+
 	if outputTemplateFilename != "" {
 		log.Printf("Output template filename: %s\n", outputTemplateFilename)
 		if t, err := template.New(filepath.Base(outputTemplateFilename)).Funcs(tplFuncs).
@@ -110,13 +121,15 @@ func main() {
 	case format == formatHTML:
 		output = renderHTML()
 	case htmlInput:
-		options.Footer = renderPageFooter()
+		options.Header = renderPageTemplate("page-header")
+		options.Footer = renderPageTemplate("page-footer")
 		output, err = printToPDF(filesHandler(inputDirs()), "/"+url.PathEscape(filepath.Base(inputFiles[0])), options)
 	default:
-		// The footer is rendered after the document, because rendering the
-		// document sets the default document title.
+		// The header and the footer are rendered after the document, because
+		// rendering the document sets the default document title.
 		renderedHTML := renderHTML()
-		options.Footer = renderPageFooter()
+		options.Header = renderPageTemplate("page-header")
+		options.Footer = renderPageTemplate("page-footer")
 		output, err = printToPDF(documentHandler(renderedHTML, filesHandler(inputDirs())), "/", options)
 	}
 	if err != nil {
@@ -128,18 +141,46 @@ func main() {
 	}
 }
 
-// renderPageFooter returns the footer template for the pages of a PDF. It is
-// the template "page-footer" of the output template. If the output template
-// does not define it, there is no footer and the result is an empty string.
-func renderPageFooter() string {
-	if outputTemplate.Lookup("page-footer") == nil {
+// renderPageTemplate returns the header or footer template for the pages of a
+// PDF. It is the template "page-header" or "page-footer" of the output
+// template. If the output template does not define it, there is no header or
+// footer and the result is an empty string.
+func renderPageTemplate(name string) string {
+	if outputTemplate.Lookup(name) == nil {
 		return ""
 	}
-	var footer strings.Builder
-	if err := outputTemplate.ExecuteTemplate(&footer, "page-footer", document); err != nil {
+	var rendered strings.Builder
+	if err := outputTemplate.ExecuteTemplate(&rendered, name, document); err != nil {
 		log.Fatal(err)
 	}
-	return footer.String()
+	return rendered.String()
+}
+
+// fileOwners returns the names of the owners of the files without duplicates,
+// separated by commas. Files without a known owner are skipped.
+func fileOwners(filenames []string) string {
+	var owners []string
+	for _, filename := range filenames {
+		if owner, err := fileOwner(filename); err == nil && owner != "" && !slices.Contains(owners, owner) {
+			owners = append(owners, owner)
+		}
+	}
+	return strings.Join(owners, ", ")
+}
+
+// lastModified returns the most recent modification time of the files.
+func lastModified(filenames []string) (time.Time, error) {
+	var latest time.Time
+	for _, filename := range filenames {
+		info, err := os.Stat(filename)
+		if err != nil {
+			return time.Time{}, err
+		}
+		if info.ModTime().After(latest) {
+			latest = info.ModTime()
+		}
+	}
+	return latest, nil
 }
 
 // isHTMLFilename reports whether the filename has the extension of an HTML file.

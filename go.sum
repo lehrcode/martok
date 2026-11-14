@@ -40,6 +40,8 @@ github.com/yuin/goldmark-highlighting/v3 v3.1.1 h1:IuCIsuHHu6MFMqxJe84/cagpBXPw+
 github.com/yuin/goldmark-highlighting/v3 v3.1.1/go.mod h1:SYSvn9hj495N38jyXkl83UtVglmzlV+8XfQ/UeaKn50=
 github.com/yuin/goldmark/v2 v2.1.16 h1:MXvCVo+Cb2SVJ5cwJUzXetDjI7HECRJCkcqylEQtcJo=
 github.com/yuin/goldmark/v2 v2.1.16/go.mod h1:G6M4/qOFtfn01/o14BU1UR2Lo5N3S9Qo7xCuz/sHjGQ=
+golang.org/x/sys v0.50.0 h1:dkKZEFTEKaLr1sjhs0WiKqoi8Jj5nHbS3Njmx1UoMJs=
+golang.org/x/sys v0.50.0/go.mod h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=

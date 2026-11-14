@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log"
@@ -20,10 +21,16 @@ type pdfOptions struct {
 	Margin float64
 	// Outline embeds the document outline (bookmarks) of the headings.
 	Outline bool
+	// Header is the HTML template that Chrome prints in the top margin of the
+	// pages. Without it there is no header.
+	Header string
 	// Footer is the HTML template that Chrome prints in the bottom margin of
 	// the pages. Without it there is no footer.
 	Footer string
 }
+
+// emptyPageTemplate is a header or footer template that prints nothing.
+const emptyPageTemplate = "<span></span>"
 
 // overlayDirs is a file system of several directories. A file is opened from
 // the first directory that contains it.
@@ -121,12 +128,12 @@ func printToPDF(handler http.Handler, path string, opts pdfOptions) ([]byte, err
 	if opts.Outline {
 		printOptions = append(printOptions, chromedp.PDFOutlineAndTagged())
 	}
-	if opts.Footer != "" {
+	if opts.Header != "" || opts.Footer != "" {
+		// If only one of the templates is given, Chrome prints its own header
+		// or footer instead of the other one.
 		printOptions = append(printOptions,
-			chromedp.PDFFooterTemplate(opts.Footer),
-			// Without a header template Chrome prints its own header with
-			// the date and the title.
-			chromedp.PDFHeaderTemplate("<span></span>"),
+			chromedp.PDFHeaderTemplate(cmp.Or(opts.Header, emptyPageTemplate)),
+			chromedp.PDFFooterTemplate(cmp.Or(opts.Footer, emptyPageTemplate)),
 		)
 	}
 	pdf, err := chromedp.Run(ctx, chromedp.PrintToPDF(printOptions...))
