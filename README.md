@@ -88,6 +88,40 @@ classes `pageNumber`, `totalPages`, `title`, `date` and `url` are filled in by
 Chrome. They are printed in the top and bottom margin over the full width of
 the page and are cut off if `--pdf-margin` is too small.
 
+### Diagrams
+
+Fenced code blocks with the language `mermaid` or `plantuml` are rendered as
+diagrams by the browser, so neither MermaidJS nor PlantUML has to be installed.
+
+````markdown
+```plantuml
+@startuml
+Bob -> Alice : hello
+@enduml
+```
+````
+
+| Flag                    | Description                       | Default                                                                |
+|-------------------------|-----------------------------------|------------------------------------------------------------------------|
+| `--mermaid-module-url`  | URL of the MermaidJS module       | `https://cdn.jsdelivr.net/npm/mermaid@latest/dist/mermaid.esm.min.mjs` |
+| `--plantuml-url-prefix` | URL prefix of the PlantUML server | `https://www.plantuml.com/plantuml/svg/`                               |
+
+Both flags use the default if they are set to `""`.
+
+A [MermaidJS](https://mermaid.js.org/) diagram is rendered by the MermaidJS
+module, which the document imports from `--mermaid-module-url`.
+
+A [PlantUML](https://plantuml.com/) diagram is embedded as an image: its source
+is encoded with the [PlantUML text encoding](https://plantuml.com/text-encoding)
+and appended to `--plantuml-url-prefix`, which gets a `/` at the end if it has
+none. The source of the diagram is therefore sent to the PlantUML server as
+part of the URL. Point the flag to a self-hosted PlantUML server if the
+diagrams must not be sent to the public one, or to another output format:
+
+```bash
+martok --plantuml-url-prefix http://localhost:8080/png/ input.md
+```
+
 ### Heading ids
 
 Headings get GitHub-style ids that are restricted to ASCII characters: the text

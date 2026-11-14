@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	_ "embed"
 	"encoding/base64"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 
 	chromahtml "github.com/alecthomas/chroma/v3/formatters/html"
 	"github.com/alecthomas/kingpin/v2"
+	"github.com/lehrcode/martok/plantuml"
 	"github.com/lehrcode/martok/slugger"
 	"github.com/lehrcode/martok/toc"
 	"github.com/yuin/goldmark-diagram"
@@ -51,6 +53,11 @@ var (
 	outputFormat   string
 	pdfOutline     bool
 	document       = Document{Variables: make(map[string]string)}
+
+	// mermaidModuleURL and plantUMLURLPrefix are empty for the defaults of the
+	// diagram renderers.
+	mermaidModuleURL  string
+	plantUMLURLPrefix string
 
 	//go:embed template.gohtml
 	outputTemplateSource   string
@@ -92,6 +99,8 @@ func main() {
 	kingpin.Flag("toc-min-depth", "minimum headline depth included in table-of-contents").IntVar(&minDepthOfTOC)
 	kingpin.Flag("toc-max-depth", "maximum headline depth included in table-of-contents").IntVar(&maxDepthOfTOC)
 	kingpin.Flag("pdf-outline", "generate PDF with outline").BoolVar(&pdfOutline)
+	kingpin.Flag("mermaid-module-url", "URL of the MermaidJS module (default: "+diagram.DefaultMermaidModuleURL+")").StringVar(&mermaidModuleURL)
+	kingpin.Flag("plantuml-url-prefix", "URL prefix of the PlantUML server (default: "+plantuml.DefaultURLPrefix+")").StringVar(&plantUMLURLPrefix)
 	kingpin.Arg("input", "Markdown filenames or a single HTML filename to convert to PDF").Required().ExistingFilesVar(&inputFiles)
 	kingpin.Parse()
 
@@ -248,7 +257,14 @@ func renderHTML() []byte {
 
 	var rendererExtensions = []html.Extension{
 		extension.NewGFMHTMLRenderer(),
-		diagram.NewHTMLRenderer(),
+		diagram.NewHTMLRenderer(
+			diagram.WithRenderer(diagram.LanguageMermaid, diagram.NewMermaidClientRenderer(
+				diagram.WithMermaidModuleURL(cmp.Or(mermaidModuleURL, diagram.DefaultMermaidModuleURL)),
+			)),
+			diagram.WithRenderer(diagram.LanguagePlantUML, plantuml.NewRenderer(
+				plantuml.WithURLPrefix(cmp.Or(plantUMLURLPrefix, plantuml.DefaultURLPrefix)),
+			)),
+		),
 		highlighting.NewHTMLRenderer(
 			highlighting.WithFormatterOptions(chromahtml.WithClasses(true)),
 			highlighting.WithExcludeLanguages("mermaid", "plantuml"),

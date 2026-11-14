@@ -98,6 +98,62 @@ func TestRenderPageTemplate(t *testing.T) {
 	}
 }
 
+func TestRenderHTMLDiagrams(t *testing.T) {
+	savedDocument, savedInputFiles := document, inputFiles
+	t.Cleanup(func() {
+		outputTemplate, document, inputFiles = nil, savedDocument, savedInputFiles
+		mermaidModuleURL, plantUMLURLPrefix = "", ""
+	})
+	outputTemplate = template.Must(template.New("custom.gohtml").Funcs(tplFuncs).Parse("{{ .Body }}"))
+	input := filepath.Join(t.TempDir(), "diagrams.md")
+	source := "```mermaid\ngraph TD; A-->B;\n```\n\n```plantuml\n@startuml\nBob -> Alice : hello\n@enduml\n```\n"
+	if err := os.WriteFile(input, []byte(source), 0644); err != nil {
+		t.Fatal(err)
+	}
+	inputFiles = []string{input}
+
+	tests := []struct {
+		name              string
+		mermaidModuleURL  string
+		plantUMLURLPrefix string
+		want              []string
+	}{
+		{
+			name: "defaults",
+			want: []string{
+				"import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@latest/dist/mermaid.esm.min.mjs';",
+				`<img src="https://www.plantuml.com/plantuml/svg/`,
+			},
+		},
+		{
+			name:              "custom URLs",
+			mermaidModuleURL:  "/js/mermaid.esm.min.mjs",
+			plantUMLURLPrefix: "http://localhost:8080/png/",
+			want: []string{
+				"import mermaid from '/js/mermaid.esm.min.mjs';",
+				`<img src="http://localhost:8080/png/`,
+			},
+		},
+		{
+			name:              "PlantUML URL prefix without a trailing slash",
+			plantUMLURLPrefix: "http://localhost:8080/png",
+			want:              []string{`<img src="http://localhost:8080/png/`},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			document = Document{}
+			mermaidModuleURL, plantUMLURLPrefix = tt.mermaidModuleURL, tt.plantUMLURLPrefix
+			html := string(renderHTML())
+			for _, want := range append(tt.want, `<pre class="mermaid">`) {
+				if !strings.Contains(html, want) {
+					t.Errorf("renderHTML() = %q, want it to contain %q", html, want)
+				}
+			}
+		})
+	}
+}
+
 func TestLastModified(t *testing.T) {
 	dir := t.TempDir()
 	older, newer := filepath.Join(dir, "older.md"), filepath.Join(dir, "newer.md")

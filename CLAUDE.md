@@ -32,6 +32,10 @@ The development machine is Windows.
 - `assets/` – files embedded with `go:embed`.
 - `toc/`, `slugger/` – Goldmark extensions for the table of contents and the
   heading ids.
+- `plantuml/` – `diagram.Renderer` for goldmark-diagram that embeds a PlantUML
+  diagram as an image loaded from a PlantUML server (`--plantuml-url-prefix`).
+  MermaidJS diagrams use the client renderer of goldmark-diagram
+  (`--mermaid-module-url`).
 
 ## How the PDF output works
 
